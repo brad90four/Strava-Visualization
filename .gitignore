@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 *.gif
+*.png

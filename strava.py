@@ -9,7 +9,7 @@ import requests
 from dotenv import load_dotenv
 from loguru import logger
 from matplotlib import colors, cm, colorbar
-from matplotlib.animation import FuncAnimation, PillowWriter
+from matplotlib.animation import FuncAnimation, PillowWriter, FFMpegWriter
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 import numpy as np
 
@@ -146,7 +146,7 @@ def feet_to_latlng(feet: float) -> float:
     return feet / 364488
 
 
-def plotter(data: tuple[list[float], list[float], list[float]], speed: list) -> None:
+def plotter(data: tuple[list[float], list[float], list[float]], speed: list, id_number: str) -> None:
     """Function for plotting data in 3D"""
     X, Y, Z = data
     speed = speed
@@ -176,6 +176,7 @@ def plotter(data: tuple[list[float], list[float], list[float]], speed: list) -> 
         shrink=0.5
     )
     plt.show()
+    # plt.savefig(f"{id_number}.png", dpi=300)
 
 
 def animator(data: tuple[list[float], list[float], list[float]], speed: list, id_number: str) -> None:
@@ -220,6 +221,7 @@ def animator(data: tuple[list[float], list[float], list[float]], speed: list, id
     anim = FuncAnimation(fig, animate, init_func=init, frames=360, interval=20, blit=True)
     save_name = f"strava_vis_{id_number}.gif"
     anim.save(save_name, writer=PillowWriter(fps=30))
+    # anim.save(save_name, writer=FFMpegWriter(fps=30))
     plt.close()
     logger.debug("Animator finished")
 
@@ -240,7 +242,7 @@ def main() -> None:
     Y = [y[0] for y in lat_long["lat_long"]]
     Z = [z for z in altitude["altitude"]]
     animator((X, Y, Z), speed, activity)
-    plotter((X, Y, Z), speed)
+    plotter((X, Y, Z), speed, activity)
 
     logger.debug("`main` finished")
 
@@ -291,7 +293,7 @@ def testing(debug_option: Optional[bool] = False) -> None:
         print(f"{len(X) = }\n{len(Y) = }\n{len(Z) = }")
 
     animator((X, Y, Z), "test")
-    plotter((X, Y, Z))
+    plotter((X, Y, Z), "test")
 
     logger.debug("`testing` finished")
 
