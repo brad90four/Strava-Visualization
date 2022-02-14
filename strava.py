@@ -5,15 +5,13 @@ from pprint import pprint
 from typing import Optional
 
 import matplotlib.pyplot as plt
+import numpy as np
 import requests
 from dotenv import load_dotenv
 from loguru import logger
-from matplotlib import colors, cm, colorbar
-from matplotlib.animation import FuncAnimation, PillowWriter, FFMpegWriter
+from matplotlib import cm, colors
+from matplotlib.animation import FuncAnimation, PillowWriter
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
-import numpy as np
-
-
 
 path = Path(__file__)
 parent = path.parent
@@ -96,7 +94,12 @@ def get_time(activity_id: str) -> dict:
     return response.json()["time"]["data"]
 
 
-def write_data(path: str = None, dist_data: dict = None, alt_data: dict = None, latlng_data: dict = None) -> None:
+def write_data(
+    path: str = None,
+    dist_data: dict = None,
+    alt_data: dict = None,
+    latlng_data: dict = None,
+) -> None:
     """Write activity data to a json file."""
     with open(f"{path.parents[0]}/strava_data.json", "w") as f:
         json.dump(dist_data, f)
@@ -146,20 +149,37 @@ def feet_to_latlng(feet: float) -> float:
     return feet / 364488
 
 
-def plotter(data: tuple[list[float], list[float], list[float]], speed: list, id_number: str) -> None:
+def plotter(
+    data: tuple[list[float], list[float], list[float]], speed: list, id_number: str
+) -> None:
     """Function for plotting data in 3D"""
+    logger.debug(f"Plotter starting for : {id_number}")
     X, Y, Z = data
     speed = speed
     x_lim = min(X), max(X)
     y_lim = min(Y), max(Y)
     z_lim = min(Z), max(Z)
-    fig = plt.figure(figsize=(6,6))
+    colormap_list = [
+        "winter",
+        "summer",
+        "spring",
+        "autumn",
+        "viridis",
+        "plasma",
+        "hot",
+        "gnuplot2",
+        "cool",
+        "bwr",
+    ]
+    fig = plt.figure(figsize=(6, 6))
     ax = fig.add_subplot(111, projection="3d")
 
-    scaled_max = np.average(speed) + 2 * np.std(speed)  # max speed to be 2*std from average
+    scaled_max = np.average(speed) + 2 * np.std(
+        speed
+    )  # max speed to be 2*std from average
     norm = colors.Normalize(vmin=0, vmax=scaled_max)
 
-    ax.scatter(X, Y, Z, norm=norm, cmap="cool", c=speed, s=0.5)
+    ax.scatter(X, Y, Z, norm=norm, cmap="gnuplot2", c=speed, s=0.5)
     ax.set_zlim3d(z_lim)
     ax.set_box_aspect((1, 1, feet_to_latlng(1) * 100000))
     ax.set_xlabel("Longitude")
@@ -169,17 +189,25 @@ def plotter(data: tuple[list[float], list[float], list[float]], speed: list, id_
     ax.set_yticks(list(y_lim))
     ax.ticklabel_format(useOffset=False)
     fig.colorbar(
-        cm.ScalarMappable(norm=norm, cmap="cool"),
+        cm.ScalarMappable(norm=norm, cmap="gnuplot2"),
         ax=ax,
         label="Speed in MPH",
         location="bottom",
-        shrink=0.5
+        shrink=0.5,
     )
-    plt.show()
-    # plt.savefig(f"{id_number}.png", dpi=300)
+    # plt.show()
+
+    ax.view_init(elev=90, azim=0)
+    plt.savefig(f"{id_number}.png", dpi=300)
+    ax.clear()
+    plt.clf()
+    plt.close()
+    logger.debug("Logger finished")
 
 
-def animator(data: tuple[list[float], list[float], list[float]], speed: list, id_number: str) -> None:
+def animator(
+    data: tuple[list[float], list[float], list[float]], speed: list, id_number: str
+) -> None:
     """Animate a 3D plot based on the input data and save with the id_number."""
     logger.debug(f"Animator starting for : {id_number}")
     speed = speed
@@ -187,13 +215,27 @@ def animator(data: tuple[list[float], list[float], list[float]], speed: list, id
     x_lim = min(X), max(X)
     y_lim = min(Y), max(Y)
     z_lim = min(Z), max(Z)
-    fig = plt.figure(figsize=(6,6))
+    colormap_list = [
+        "winter",
+        "summer",
+        "spring",
+        "autumn",
+        "viridis",
+        "plasma",
+        "hot",
+        "gnuplot2",
+        "cool",
+        "bwr",
+    ]
+    fig = plt.figure(figsize=(6, 6))
     ax = fig.add_subplot(111, projection="3d")
 
-    scaled_max = np.average(speed) + 2 * np.std(speed)
+    scaled_max = np.average(speed) + 2 * np.std(
+        speed
+    )  # max speed to be 2*std from average
     norm = colors.Normalize(vmin=0, vmax=scaled_max)
 
-    ax.scatter(X, Y, Z, norm=norm, cmap="cool", c=speed, s=0.5)
+    ax.scatter(X, Y, Z, norm=norm, cmap="gnuplot2", c=speed, s=0.5)
     ax.set_zlim3d(z_lim)
     ax.set_box_aspect((1, 1, feet_to_latlng(1) * 100000))
     ax.set_xlabel("Longitude")
@@ -203,11 +245,11 @@ def animator(data: tuple[list[float], list[float], list[float]], speed: list, id
     ax.set_yticks(list(y_lim))
     ax.ticklabel_format(useOffset=False)
     fig.colorbar(
-        cm.ScalarMappable(norm=norm, cmap="cool"),
+        cm.ScalarMappable(norm=norm, cmap="gnuplot2"),
         ax=ax,
         label="Speed in MPH",
         location="bottom",
-        shrink=0.5
+        shrink=0.5,
     )
 
     def init():
@@ -218,10 +260,14 @@ def animator(data: tuple[list[float], list[float], list[float]], speed: list, id
         ax.view_init(elev=30.0, azim=i)
         return (fig,)
 
-    anim = FuncAnimation(fig, animate, init_func=init, frames=360, interval=20, blit=True)
+    anim = FuncAnimation(
+        fig, animate, init_func=init, frames=360, interval=20, blit=True
+    )
     save_name = f"strava_vis_{id_number}.gif"
     anim.save(save_name, writer=PillowWriter(fps=30))
     # anim.save(save_name, writer=FFMpegWriter(fps=30))
+    ax.clear()
+    plt.clf()
     plt.close()
     logger.debug("Animator finished")
 
@@ -254,7 +300,6 @@ def testing(debug_option: Optional[bool] = False) -> None:
     lat_long = {"lat_long": get_latlong(6492923259)}
     distance = {"distance": get_distance(6492923259)}
     time = {"time": get_time(6492923259)}
-
 
     speed_map = calc_speed(time["time"], distance["distance"])
 
