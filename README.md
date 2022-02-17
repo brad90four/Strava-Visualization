@@ -24,7 +24,15 @@ A script to create visualizations of strava rides
 
    ``curl -X POST https://www.strava.com/oauth/token -F client_id=YOURCLIENTID -F client_secret=YOURCLIENTSECRET -F code=AUTHORIZATIONCODE -F grant_type=authorization_code``
 
-6. Use the ``access_token`` provided in the response as the ``.env`` variable ``STRAVA_TOKEN``.
+6. Create a ``.env`` file with the following information:
+    ```
+    REFRESH_TOKEN=<token that is given in the curl response>
+    ACCESS_CODE=<token that is given in the curl response>
+    CLIENT_ID=<ID given to your Strava application>
+    CLIENT_SECRET=<secret given to your Strava application>
+    ```
 
-7. From the command line, run ``python strava.py``.
-8. When the access token expires, run ``auth.py`` from the commandline
+7. Use the ``access_token`` and ``refresh_token`` provided in the response in the ``.env`` file.
+
+8. From the command line, run ``python strava.py``.
+9. When the access token expires, run ``auth.py`` from the commandline
