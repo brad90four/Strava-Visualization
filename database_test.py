@@ -96,9 +96,9 @@ def read_data(activity_id: str) -> dict[str]:
     cur.execute("SELECT * FROM strava WHERE activity_id = ?", (activity_id,))
     activity_data = {activity_id: cur.fetchall()}
     con.close()
-    print(f"{type(activity_data) = }")
-    print(f"{activity_data.keys() = }")
-    print([type(k) for k in activity_data.keys()])
+    logger.debug(f"{type(activity_data) = }")
+    logger.debug(f"{activity_data.keys() = }")
+    logger.debug([type(k) for k in activity_data.keys()])
 
     return activity_data
 
@@ -113,13 +113,13 @@ if __name__ == "__main__":
 
     # todo create new table for setup
 
-    # write_data(activity, distance, time, altitude, lat_long)
-    # print(f"{'-'*5}After writing data{'-'*5}")
-    # database_print("strava_test.db")
+    write_data(activity, distance, time, altitude, lat_long)
+    print(f"{'-'*5}After writing data{'-'*5}")
+    database_print("strava_test.db")
 
-    # print(f"{'-'*5}After reading data{'-'*5}")
-    # read_data("6492923259")
-    # database_print("strava_test.db")
+    print(f"{'-'*5}After reading data{'-'*5}")
+    read_data("6492923259")
+    database_print("strava_test.db")
 
     print(read_data("123456"))
     print(len(read_data("123456")["123456"]))
