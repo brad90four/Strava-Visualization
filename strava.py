@@ -1,100 +1,28 @@
-import json
-import os
-import sqlite3
-
-from pprint import pprint
-from pathlib import Path
+# main strava script
 from typing import Optional
-from matplotlib.font_manager import json_dump
 
 import matplotlib.pyplot as plt
 import numpy as np
-import requests
-from dotenv import load_dotenv
-from loguru import logger
 from matplotlib import cm, colors
 from matplotlib.animation import FuncAnimation, PillowWriter
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
-# from database_test import write_data, read_data
-
-load_dotenv(Path(__file__).parent.joinpath(".env"))
-ACCESS_CODE = os.environ.get("ACCESS_CODE")
-
-
-def get_athlete() -> None:
-    """Get athlete data"""
-    athlete_url = "https://www.strava.com/api/v3/athlete"
-    headers = {"accept": "application/json", "authorization": f"Bearer {ACCESS_CODE}"}
-    response = requests.get(athlete_url, headers=headers)
-
-    logger.debug(f"{response.status_code = }")
-    pprint(response.json())
+from database_test import read_data, write_data
+from endpoints import (
+    get_activities,
+    get_altitude,
+    get_athlete,
+    get_distance,
+    get_latlong,
+    get_time,
+    list_activities,
+)
+from loguru import logger
 
 
-def list_activities() -> dict:
-    """List athlete activities."""
-    list_activities_url = "https://www.strava.com/api/v3/athlete/activities?per_page=30"
-    headers = {"accept": "application/json", "authorization": f"Bearer {ACCESS_CODE}"}
-    response = requests.get(list_activities_url, headers=headers)
-
-    logger.debug(f"{response.status_code = }")
-    activities = response.json()
-    for i in range(len(activities)):
-        activity_id = activities[i]["id"]
-        activity_description = activities[i]["name"]
-        print(f"{activity_description : <35}: {activity_id}")
-
-
-def get_activities() -> dict:
-    """List athlete activities."""
-    list_activities_url = "https://www.strava.com/api/v3/athlete/activities?per_page=30"
-    headers = {"accept": "application/json", "authorization": f"Bearer {ACCESS_CODE}"}
-    response = requests.get(list_activities_url, headers=headers)
-
-    logger.debug(f"{response.status_code = }")
-
-    return response.json()
-
-
-def get_distance(activity_id: str) -> dict[str, list[float]]:
-    """Get distance data from activity."""
-    activity_stream = f"https://www.strava.com/api/v3/activities/{activity_id}/streams?keys=distance&key_by_type=true"
-    headers = {"accept": "application/json", "authorization": f"Bearer {ACCESS_CODE}"}
-    response = requests.get(activity_stream, headers=headers)
-
-    logger.debug(f"{response.status_code = }")
-    return response.json()["distance"]["data"]
-
-
-def get_altitude(activity_id: str) -> dict[str, list[float]]:
-    """Get altitude data from activity."""
-    activity_stream = f"https://www.strava.com/api/v3/activities/{activity_id}/streams?keys=altitude&key_by_type=true"
-    headers = {"accept": "application/json", "authorization": f"Bearer {ACCESS_CODE}"}
-    response = requests.get(activity_stream, headers=headers)
-
-    logger.debug(f"{response.status_code = }")
-    return response.json()["altitude"]["data"]
-
-
-def get_latlong(activity_id: str) -> dict[str, list[list[float, float]]]:
-    """Get latitude and longitude from activity."""
-    latlong_url = f"https://www.strava.com/api/v3/activities/{activity_id}/streams?keys=latlng&key_by_type=true"
-    headers = {"accept": "application/json", "authorization": f"Bearer {ACCESS_CODE}"}
-    response = requests.get(latlong_url, headers=headers)
-
-    logger.debug(f"{response.status_code = }")
-    return response.json()["latlng"]["data"]
-
-
-def get_time(activity_id: str) -> dict:
-    """Get time stamps from activity."""
-    time_url = f"https://www.strava.com/api/v3/activities/{activity_id}/streams?keys=time&key_by_type=true"
-    headers = {"accept": "application/json", "authorization": f"Bearer {ACCESS_CODE}"}
-    response = requests.get(time_url, headers=headers)
-
-    logger.debug(f"{response.status_code = }")
-    return response.json()["time"]["data"]
+class NoActivityError(Exception):
+    """Raised when the activity_id is not found in the database."""
+    pass
 
 
 def calc_speed(time_dict: dict, dist_dict: dict) -> dict:
@@ -180,7 +108,7 @@ def plotter(
     ax.clear()
     plt.clf()
     plt.close()
-    logger.debug("Logger finished")
+    logger.debug("Plotter finished")
 
 
 def animator(
@@ -256,19 +184,44 @@ def main() -> None:
     list_activities()
     activity = input("Enter target activity id: ")
 
-    altitude = {"altitude": get_altitude(activity)}
-    lat_long = {"lat_long": get_latlong(activity)}
-    distance = {"distance": get_distance(activity)}
-    time = {"time": get_time(activity)}
+    try:
+        activity_data = read_data(activity)
+        if len(activity_data[activity]) == 0:
+            raise NoActivityError(f"No activity with id: {activity}")
+        else:
+            dist_data = []
+            time_data = []
+            alt_data = []
+            lat_long_data = []
 
-    speed = calc_speed(time["time"], distance["distance"])
-    # write_data(activity, distance, altitude, lat_long)
+            for i in range(len(activity_data[activity])):
+                dist_data.append(activity_data[activity][i][1])
+                time_data.append(activity_data[activity][i][2])
+                alt_data.append(activity_data[activity][i][3])
+                lat, lon = (
+                    activity_data[activity][i][4].strip("[").strip("]").split(",")
+                )
+                lat_long_data.append([float(lat), float(lon)])
+
+            altitude = {"altitude": alt_data}
+            distance = {"distance": dist_data}
+            time = {"time": time_data}
+            lat_long = {"lat_long": lat_long_data}
+            speed = calc_speed(time_data, dist_data)
+
+    except NoActivityError:
+        altitude = {"altitude": get_altitude(activity)}
+        lat_long = {"lat_long": get_latlong(activity)}
+        distance = {"distance": get_distance(activity)}
+        time = {"time": get_time(activity)}
+        speed = calc_speed(time["time"], distance["distance"])
+        write_data(activity, distance, time, altitude, lat_long)
+
     X = [x[1] for x in lat_long["lat_long"]]
     Y = [y[0] for y in lat_long["lat_long"]]
     Z = [z for z in altitude["altitude"]]
     animator((X, Y, Z), speed, activity)
     plotter((X, Y, Z), speed, activity)
-    # read_data()
 
     logger.debug("`main` finished")
 
@@ -287,7 +240,6 @@ def testing(debug_option: Optional[bool] = False) -> None:
     X = [x[1] for x in lat_long["lat_long"]]
     Y = [y[0] for y in lat_long["lat_long"]]
     Z = [z for z in altitude["altitude"]]
-
 
     if debug_option:
         x_lim = min(X), max(X)
@@ -318,10 +270,9 @@ def testing(debug_option: Optional[bool] = False) -> None:
         print(f"z_range= {max(Z) - min(Z)}")
         print(f"{len(X) = }\n{len(Y) = }\n{len(Z) = }")
 
-    # write_data(activity_id, distance, altitude, lat_long)
+    write_data(activity_id, distance, time, altitude, lat_long)
     animator((X, Y, Z), "test", activity_id)
     plotter((X, Y, Z), "test", activity_id)
-    # read_data()
 
     logger.debug("`testing` finished")
 
