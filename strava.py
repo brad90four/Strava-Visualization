@@ -1,8 +1,11 @@
 import json
 import os
-from pathlib import Path
+import sqlite3
+
 from pprint import pprint
+from pathlib import Path
 from typing import Optional
+from matplotlib.font_manager import json_dump
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,9 +16,9 @@ from matplotlib import cm, colors
 from matplotlib.animation import FuncAnimation, PillowWriter
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
-path = Path(__file__)
-parent = path.parent
-load_dotenv(parent.joinpath(".env"))
+# from database_test import write_data, read_data
+
+load_dotenv(Path(__file__).parent.joinpath(".env"))
 ACCESS_CODE = os.environ.get("ACCESS_CODE")
 
 
@@ -94,22 +97,6 @@ def get_time(activity_id: str) -> dict:
     return response.json()["time"]["data"]
 
 
-def write_data(
-    path: str = None,
-    dist_data: dict = None,
-    alt_data: dict = None,
-    latlng_data: dict = None,
-) -> None:
-    """Write activity data to a json file."""
-    with open(f"{path.parents[0]}/strava_data.json", "w") as f:
-        json.dump(dist_data, f)
-        f.write("\n")
-        json.dump(alt_data, f)
-        f.write("\n")
-        json.dump(latlng_data, f)
-        f.write("\n")
-
-
 def calc_speed(time_dict: dict, dist_dict: dict) -> dict:
     """Calculate speed between time and distance points."""
     speed = []
@@ -128,15 +115,6 @@ def calc_speed(time_dict: dict, dist_dict: dict) -> dict:
     speed.append(0)  # to handle the length change be calculating the deltas
 
     return speed
-
-
-def read_data() -> None:
-    """
-    Read activity data from a json file.
-
-    Currently not in use for running locally.
-    """
-    pass
 
 
 def latlng_to_feet(latlng: float) -> float:
@@ -277,18 +255,20 @@ def main() -> None:
     logger.debug("`main` starting")
     list_activities()
     activity = input("Enter target activity id: ")
+
     altitude = {"altitude": get_altitude(activity)}
     lat_long = {"lat_long": get_latlong(activity)}
     distance = {"distance": get_distance(activity)}
     time = {"time": get_time(activity)}
 
     speed = calc_speed(time["time"], distance["distance"])
-    # write_data(path, distance, altitude, lat_long)
+    # write_data(activity, distance, altitude, lat_long)
     X = [x[1] for x in lat_long["lat_long"]]
     Y = [y[0] for y in lat_long["lat_long"]]
     Z = [z for z in altitude["altitude"]]
     animator((X, Y, Z), speed, activity)
     plotter((X, Y, Z), speed, activity)
+    # read_data()
 
     logger.debug("`main` finished")
 
@@ -296,6 +276,7 @@ def main() -> None:
 def testing(debug_option: Optional[bool] = False) -> None:
     """Test `main` with a static activity ID."""
     logger.debug("Running test mode")
+    activity_id = "6492923259"
     altitude = {"altitude": get_altitude(6492923259)}
     lat_long = {"lat_long": get_latlong(6492923259)}
     distance = {"distance": get_distance(6492923259)}
@@ -307,24 +288,24 @@ def testing(debug_option: Optional[bool] = False) -> None:
     Y = [y[0] for y in lat_long["lat_long"]]
     Z = [z for z in altitude["altitude"]]
 
-    x_lim = min(X), max(X)
-    y_lim = min(Y), max(Y)
-    z_lim = min(Z), max(Z)
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
-    ax.plot(X, Y, Z)
-    ax.set_zlim3d(z_lim)
-    ax.set_box_aspect((1, 1, feet_to_latlng(1) * 100000))
-    ax.scatter(X, Y, Z, cmap="rainbow", c=speed_map)
-    ax.set_xlabel("Longitude")
-    ax.set_ylabel("Latitude")
-    ax.set_zlabel("Altitude")
-    ax.set_xticks(list(x_lim))
-    ax.set_yticks(list(y_lim))
-    ax.ticklabel_format(useOffset=False)
-    plt.show()
 
     if debug_option:
+        x_lim = min(X), max(X)
+        y_lim = min(Y), max(Y)
+        z_lim = min(Z), max(Z)
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        ax.plot(X, Y, Z)
+        ax.set_zlim3d(z_lim)
+        ax.set_box_aspect((1, 1, feet_to_latlng(1) * 100000))
+        ax.scatter(X, Y, Z, cmap="rainbow", c=speed_map)
+        ax.set_xlabel("Longitude")
+        ax.set_ylabel("Latitude")
+        ax.set_zlabel("Altitude")
+        ax.set_xticks(list(x_lim))
+        ax.set_yticks(list(y_lim))
+        ax.ticklabel_format(useOffset=False)
+        plt.show()
         x_lim = min(X), max(X)
         y_lim = min(Y), max(Y)
         z_lim = min(Z), max(Z)
@@ -337,8 +318,10 @@ def testing(debug_option: Optional[bool] = False) -> None:
         print(f"z_range= {max(Z) - min(Z)}")
         print(f"{len(X) = }\n{len(Y) = }\n{len(Z) = }")
 
-    animator((X, Y, Z), "test")
-    plotter((X, Y, Z), "test")
+    # write_data(activity_id, distance, altitude, lat_long)
+    animator((X, Y, Z), "test", activity_id)
+    plotter((X, Y, Z), "test", activity_id)
+    # read_data()
 
     logger.debug("`testing` finished")
 

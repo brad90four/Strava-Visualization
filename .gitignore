@@ -130,3 +130,6 @@ dmypy.json
 
 *.gif
 *.png
+
+*.db
+*.json
