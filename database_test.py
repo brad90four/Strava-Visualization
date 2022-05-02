@@ -2,8 +2,8 @@
 import sqlite3
 from pprint import pprint
 
+from endpoints import get_altitude, get_distance, get_latlong, get_time
 from loguru import logger
-from strava import get_altitude, get_distance, get_latlong, get_time
 
 
 def create_database():
@@ -64,9 +64,8 @@ def write_data(
         "SELECT EXISTS(SELECT 1 FROM strava WHERE activity_id = ?)", (activity_id,)
     )
     activity_test = cur.fetchall()
-    logger.debug(f"{activity_test = }")
-    logger.debug(f"{activity_test[0][0] = }")
     if activity_test[0][0] == 0:
+        logger.debug(f"Activity ID not in database. Adding {activity_id = }")
         dist = dist_data["distance"]
         time = time_data["time"]
         alt = alt_data["altitude"]
@@ -111,6 +110,8 @@ if __name__ == "__main__":
     lat_long = {"lat_long": get_latlong(activity)}
     distance = {"distance": get_distance(activity)}
     time = {"time": get_time(activity)}
+
+    # todo create new table for setup
 
     # write_data(activity, distance, time, altitude, lat_long)
     # print(f"{'-'*5}After writing data{'-'*5}")
