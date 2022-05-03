@@ -7,11 +7,11 @@ from matplotlib import cm, colors
 from matplotlib.animation import FuncAnimation, PillowWriter
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
+from auth import refresh_strava
 from database_test import read_data, write_data
 from endpoints import (
     get_activities,
     get_altitude,
-    get_athlete,
     get_distance,
     get_latlong,
     get_time,
@@ -22,6 +22,7 @@ from loguru import logger
 
 class NoActivityError(Exception):
     """Raised when the activity_id is not found in the database."""
+
     pass
 
 
@@ -296,6 +297,7 @@ def all_rides() -> None:
 
 
 if __name__ == "__main__":
+    refresh_strava()
     main()
     # testing(debug_option=False)
     # all_rides()

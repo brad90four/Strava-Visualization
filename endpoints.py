@@ -1,7 +1,6 @@
 # endpoints collection script
 import os
 from pathlib import Path
-from pprint import pprint
 
 import requests
 
@@ -13,13 +12,13 @@ ACCESS_CODE = os.environ.get("ACCESS_CODE")
 
 
 def get_athlete() -> None:
-    """Get athlete data"""
+    """Get athlete data. Will only be used to test authentication."""
     athlete_url = "https://www.strava.com/api/v3/athlete"
     headers = {"accept": "application/json", "authorization": f"Bearer {ACCESS_CODE}"}
     response = requests.get(athlete_url, headers=headers)
 
     logger.debug(f"{response.status_code = }")
-    pprint(response.json())
+    return response.status_code
 
 
 def get_activities() -> dict:
