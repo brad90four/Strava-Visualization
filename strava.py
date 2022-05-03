@@ -66,7 +66,7 @@ def plotter(
     x_lim = min(X), max(X)
     y_lim = min(Y), max(Y)
     z_lim = min(Z), max(Z)
-    colormap_list = [
+    colormap_list = [  # noqa: F841
         "winter",
         "summer",
         "spring",
@@ -122,7 +122,7 @@ def animator(
     x_lim = min(X), max(X)
     y_lim = min(Y), max(Y)
     z_lim = min(Z), max(Z)
-    colormap_list = [
+    colormap_list = [  # noqa: F841
         "winter",
         "summer",
         "spring",
