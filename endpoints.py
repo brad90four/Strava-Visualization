@@ -7,8 +7,9 @@ import requests
 from dotenv import load_dotenv
 from loguru import logger
 
-load_dotenv(Path(__file__).parent.joinpath(".env"))
+load_dotenv(Path(__file__).parent.joinpath(".env"), override=True)
 ACCESS_CODE = os.environ.get("ACCESS_CODE")
+
 
 
 def get_athlete() -> None:
@@ -73,10 +74,12 @@ def get_time(activity_id: str) -> dict:
 
 def list_activities() -> dict:
     """List athlete activities."""
+    load_dotenv(Path(__file__).parent.joinpath(".env"), override=True)
+    ACCESS_CODE = os.environ.get("ACCESS_CODE")
     list_activities_url = "https://www.strava.com/api/v3/athlete/activities?per_page=30"
     headers = {"accept": "application/json", "authorization": f"Bearer {ACCESS_CODE}"}
     response = requests.get(list_activities_url, headers=headers)
-
+    logger.debug(f"{ACCESS_CODE = }")
     logger.debug(f"{response.status_code = }")
     activities = response.json()
     for i in range(len(activities)):
