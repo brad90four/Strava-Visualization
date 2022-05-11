@@ -14,6 +14,7 @@ def get_access() -> str:
     return os.environ.get("ACCESS_CODE")
 
 
+
 def get_athlete() -> None:
     """Get athlete data. Will only be used to test authentication."""
     ACCESS_CODE = get_access()
@@ -86,7 +87,7 @@ def list_activities() -> dict:
     list_activities_url = "https://www.strava.com/api/v3/athlete/activities?per_page=30"
     headers = {"accept": "application/json", "authorization": f"Bearer {ACCESS_CODE}"}
     response = requests.get(list_activities_url, headers=headers)
-
+    logger.debug(f"{ACCESS_CODE = }")
     logger.debug(f"{response.status_code = }")
     activities = response.json()
     for i in range(len(activities)):

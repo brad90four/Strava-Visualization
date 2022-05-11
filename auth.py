@@ -36,6 +36,7 @@ def refresh_strava() -> None:
         set_key(dotenv_file, "ACCESS_CODE", access_code)
         if refresh_code.status_code == 200 and access_code is not None:
             logger.info("Successfully refreshed strava access.")
+        # time.sleep(5)
     elif code == 200:
         logger.info("Access token still valid.")
     else:

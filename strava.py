@@ -8,7 +8,7 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 from auth import refresh_strava
-from database_test import read_data, write_data
+from database_test import read_data, write_data, create_database
 from endpoints import (
     get_activities,
     get_altitude,
@@ -190,6 +190,7 @@ def main() -> None:
         if len(activity_data[activity]) == 0:
             raise NoActivityError(f"No activity with id: {activity}")
         else:
+            logger.debug("Activity exists in local database, reading data.")
             dist_data = []
             time_data = []
             alt_data = []
