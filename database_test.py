@@ -14,9 +14,8 @@ def create_database():
     """
     con = sqlite3.connect("strava_test.db")
     cur = con.cursor()
-    cur.execute("Drop TABLE IF EXISTS strava")
     cur.execute(
-        """CREATE TABLE strava
+        """CREATE TABLE IF NOT EXISTS strava
                 (activity_id TEXT, distance REAL, time REAL, altitude REAL, lat_long BLOB)"""
     )
     con.commit()
