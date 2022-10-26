@@ -8,7 +8,7 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 from auth import refresh_strava
-from database_test import read_data, write_data, create_database
+from database_test import read_data, write_data
 from endpoints import (
     get_activities,
     get_altitude,
@@ -22,7 +22,6 @@ from loguru import logger
 
 class NoActivityError(Exception):
     """Raised when the activity_id is not found in the database."""
-
     pass
 
 
@@ -41,7 +40,7 @@ def calc_speed(time_dict: dict, dist_dict: dict) -> dict:
     for t, d in zip(time_delta, dist_delta):
         speed.append((d / max(t, 1)) * 2.23694)  # m/s to mph
 
-    speed.append(0)  # to handle the length change be calculating the deltas
+    speed.append(0)  # to handle the length change from calculating the deltas
 
     return speed
 
@@ -81,9 +80,7 @@ def plotter(
     fig = plt.figure(figsize=(6, 6))
     ax = fig.add_subplot(111, projection="3d")
 
-    scaled_max = np.average(speed) + 2 * np.std(
-        speed
-    )  # max speed to be 2*std from average
+    scaled_max = np.average(speed) + 2 * np.std(speed)  # max speed to be 2*std from average
     norm = colors.Normalize(vmin=0, vmax=scaled_max)
 
     ax.scatter(X, Y, Z, norm=norm, cmap="gnuplot2", c=speed, s=0.5)
@@ -95,6 +92,8 @@ def plotter(
     ax.set_xticks(list(x_lim))
     ax.set_yticks(list(y_lim))
     ax.ticklabel_format(useOffset=False)
+    # to hide lat, lon and altitude info, un-comment the line below
+    # plt.tick_params(left=False, right=False, labelleft = False, labelbottom = False, bottom = False)
     fig.colorbar(
         cm.ScalarMappable(norm=norm, cmap="gnuplot2"),
         ax=ax,
@@ -137,9 +136,7 @@ def animator(
     fig = plt.figure(figsize=(6, 6))
     ax = fig.add_subplot(111, projection="3d")
 
-    scaled_max = np.average(speed) + 2 * np.std(
-        speed
-    )  # max speed to be 2*std from average
+    scaled_max = np.average(speed) + 2 * np.std(speed)  # max speed to be 2*std from average
     norm = colors.Normalize(vmin=0, vmax=scaled_max)
 
     ax.scatter(X, Y, Z, norm=norm, cmap="gnuplot2", c=speed, s=0.5)
@@ -151,6 +148,8 @@ def animator(
     ax.set_xticks(list(x_lim))
     ax.set_yticks(list(y_lim))
     ax.ticklabel_format(useOffset=False)
+    # to hide lat, lon and altitude info, un-comment the line below
+    # plt.tick_params(left=False, right=False, labelleft = False, labelbottom = False, bottom = False)
     fig.colorbar(
         cm.ScalarMappable(norm=norm, cmap="gnuplot2"),
         ax=ax,
